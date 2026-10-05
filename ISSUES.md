@@ -56,6 +56,19 @@ survived the exit sequence"). Mitigated in beb0e12 by raising the budgets
 prints a full stack dump if a thread genuinely survives, so real bugs still
 fail loudly. If it flakes again despite the budgets, root-cause it.
 
+## OPEN 2 — full menu-command audit (in progress)
+
+Operator hit `NameError: name 'Interfaces'` on the `Interfaces` command
+(engine.py imported `paint, Open, ...` from display but not `Interfaces`;
+the same missing import also broke listener tab-completion at lines ~946/962).
+**Fixed in 0b3faa5.** Static sweep (pyflakes) found no other hard undefined
+names — all remaining warnings are `from .compat import *` star-import noise
+(mcp_server's `core` is injected by `__init__.py` and verified present at
+runtime).
+
+Remaining: live-verify each menu command (operator-driven, real terminal).
+Status will be recorded here. Suspect nothing; this is routine coverage.
+
 ## ENVIRONMENT QUIRKS (not ariadne bugs)
 
 - deb13: `/dev/shm` is **noexec**; `/tmp` is exec-ok. ariadne's exec_tmp probe
