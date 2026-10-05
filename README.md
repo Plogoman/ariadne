@@ -98,15 +98,16 @@ own install instructions (Kali package, standalone script, pipx, PyPI).
 - Serve files and folders over HTTP (`-s`)
 - Can be imported by Python exploits to handle shells in the same terminal (see [extras/exploit_examples](extras/exploit_examples))
 - Can be used with Metasploit exploits by disabling the default handler with `set DisablePayloadHandler True`
+- **Python agent mode:** shells auto-upgrade to a full agent (PTY + a binary exec protocol) for fast exec, chunked uploads/downloads and background script execution. Agent capability is probed before deploying, and a standalone Python is offered when the target's interpreter is crippled
 - Expose live sessions to an MCP client like Claude Code with the `--mcp` switch (token-authenticated HTTP, optional TLS), driving the same shells alongside you
 
 ### Modules
 
-Modules are shortcuts for tools you would otherwise run, download, or upload by hand. Type `modules` to list them and `run <module>` to use one. Upload modules fetch tools from their upstream sources when run; operator-side modules such as `certipy` and `enum4linux_ng` use programs installed locally and run them on the Ariadne host. Ariadne itself has no runtime dependencies.
+Modules are shortcuts for tools you would otherwise run, download, or upload by hand. Type `modules` to list them and `run <module>` to use one. Upload modules fetch tools from their upstream sources when run; operator-side modules such as `certipy` and `enum4linux_ng` use programs installed locally and run them on the Ariadne host. Ariadne itself has no runtime dependencies. `peass_ng` and `lse` pre-flight the target binaries they need (e.g. `ps`/procps) and can offer to install them through the target's package manager.
 
 |Category|Module|What it does|
 |---|---|---|
-|Privilege Escalation|`upload_privesc_scripts`|Upload linpeas, lse, deepce, pspy on Unix, or winpeas, powerup, privesccheck, fullpowers, enablealltokenprivs on Windows|
+|Privilege Escalation|`upload_privesc_scripts`|Upload linpeas, lse, linenum, les, deepce, pspy, amicontained, cdk on Unix, or winpeas, powerup, privesccheck, fullpowers, enablealltokenprivs on Windows|
 ||`peass_ng`|Run the latest PEASS-ng in the background|
 ||`lse`|Run the latest linux-smart-enumeration in the background|
 ||`linuxexploitsuggester`|Run the latest linux-exploit-suggester in the background|
@@ -117,14 +118,16 @@ Modules are shortcuts for tools you would otherwise run, download, or upload by 
 |Active Directory|`upload_ad_scripts`|Upload PowerView, SharpHound, GhostPack, adPEAS|
 ||`certipy`|Run Certipy's AD CS `find` enumeration locally on the operator host|
 |Host Enumeration|`seatbelt`|Run selected Seatbelt checks from the uploaded GhostPack bundle and download a JSON report|
+||`virt_enum`|Detect hypervisor, cloud instance, container runtime and WSL from the target (`virt_enum cloud` probes cloud metadata)|
 |Network Enumeration|`enum4linux_ng`|Run enum4linux-ng locally against an SMB target, defaulting to the selected session IP|
 |Pivoting|`ligolo`|Upload the Ligolo-ng agent|
 ||`chisel`|Upload Chisel|
+||`upload_k8s_tools`|Upload Kubernetes attack tools (peirates, kubeletctl) for enumeration/escalation from inside a pod|
 ||`ngrok`|Set up a TCP tunnel through ngrok|
 |Forensics|`uac`|Collect forensic artifacts with Unix-like Artifacts Collector in the background|
 ||`linux_procmemdump`|Dump process memory in the background (needs root)|
 |Persistence|`panix`|Upload PANIX|
-|Misc|`meterpreter`|Spawn a Meterpreter session|
+|Misc|`meterpreter`|Spawn a Meterpreter session (Windows, or Linux x64/x86/aarch64 staged ELF payloads; reuses an already-listening handler instead of spawning a second msfconsole)|
 ||`cleanup`|Remove the files and directories you uploaded to the target|
 
 ![modules](https://github.com/user-attachments/assets/ff139757-ea4b-487d-8e81-e84baf911093)

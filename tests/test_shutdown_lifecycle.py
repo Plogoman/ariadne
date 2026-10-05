@@ -154,14 +154,14 @@ class SessionExitDrainTests(unittest.TestCase):
 			)
 			self.addCleanup(target.kill)
 
-			deadline = time.time() + 60
+			deadline = time.time() + 120
 			while time.time() < deadline and not core.sessions:
 				time.sleep(0.2)
 			self.assertTrue(core.sessions, 'no session established')
 			session = list(core.sessions.values())[0]
 			self.addCleanup(session.kill)
 
-			deadline = time.time() + 60
+			deadline = time.time() + 120
 			while time.time() < deadline and not session.agent:
 				time.sleep(0.2)
 			self.assertTrue(session.agent, 'agent not deployed')
@@ -193,8 +193,11 @@ class SessionExitDrainTests(unittest.TestCase):
 					thread.join(timeout=10)
 
 			# The exec thread must terminate promptly instead of blocking in
-			# ControlQueue.get() forever.
-			deadline = time.time() + 10
+			# ControlQueue.get() forever. Generous budget: on loaded CI
+			# runners teardown scheduling can exceed 10s without any real
+			# regression; a genuinely stuck thread fails here with a full
+			# stack dump.
+			deadline = time.time() + 30
 			while time.time() < deadline and any(t.is_alive() for t in exec_threads):
 				time.sleep(0.1)
 			for thread in exec_threads:

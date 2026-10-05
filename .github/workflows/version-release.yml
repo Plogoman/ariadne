@@ -10,6 +10,10 @@ on:
 jobs:
   check-and-release:
     runs-on: ubuntu-latest
+    env:
+      # `secrets` is not a valid context in step `if:` expressions; expose
+      # its presence as an env var the condition can read instead.
+      PYPI_TOKEN_SET: ${{ secrets.PYPI_API_TOKEN != '' }}
 
     steps:
     - name: Checkout code
@@ -97,7 +101,7 @@ jobs:
     # when the secret is unset; remove the step entirely if you never
     # want to publish to PyPI.
     - name: Publish to PyPI
-      if: ${{ steps.release_version.outputs.changed == 'true' && secrets.PYPI_API_TOKEN != '' }}
+      if: ${{ steps.release_version.outputs.changed == 'true' && env.PYPI_TOKEN_SET == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
