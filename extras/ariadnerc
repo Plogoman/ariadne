@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+# ------------------------------------------------------------
+# ARIADNE Configuration File
+#
+# This file is loaded automatically by Ariadne at startup.
+# To enable it, place this file at:
+#   ~/.ariadne/ariadnerc
+# ------------------------------------------------------------
+
+# options.escape = {'sequence':b'\x10', 'key':'Ctrl+P'}		# Change the Main Menu escape key from F12 to Ctrl+P
+# options.upload_random_suffix = True				# Add a random suffix to uploaded files to avoid clobbering/overwriting existing files
+# options.default_listener_port = 9999				# Change the default listener port from 4444 to 9999
+# options.ports = 80,443,445,4444				# Listen to multiple ports by default
+# options.interface = 'tun0'					# Listen by default only on tun0 interface
+# options.download_folder = '.'					# Always save downloads into the current working directory
+# paint._colors['blue'] = 136					# Converts blue to orange
+
+# Module named 'my_custom_module' that runs with the 'run' command
+#class my_custom_module(Module):
+#	category = "My Custom Category"
+#	def run(session, args):
+#		"""
+#		Downloads the /etc directory
+#		"""
+#		if session.OS == 'Unix':
+#			session.download("/etc")
+#		else:
+#			logger.error("This module runs only on Unix shells")
+
+# Module named 'aliases' that runs upon session creation
+#class aliases(Module):
+#	enabled = True
+#	on_session_start = True
+#	category = "My Custom Modules"
+#	def run(session, args):
+#		"""
+#		Apply my .bash_aliases file to target
+#		"""
+#		if session.OS == 'Unix':
+#			session.exec(f'cp ~/.bash_aliases ~/.bash_aliases_backup{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+#			session.upload(".bash_aliases", remote_path="~/")
+#			logger.info("~/.bash_aliases replaced!")
+#		else:
+#			logger.error("This module runs only on Unix shells")
+
+# Module named 'mybashrc' that runs on first attach
+#class mybashrc(Module):
+#	on_first_attach = True
+#	category = "My Custom Modules"
+#	def run(session, args):
+#		"""
+#		Apply my .bashrc file to target
+#		"""
+#		if session.OS == 'Unix':
+#			session.upload("~/.bashrc", remote_path="/tmp")
+#			session.exec("source /tmp/.bashrc", agent_typing=True)
+#			logger.info("Applied my .bashrc!")
+#		else:
+#			logger.error("This module runs only on Unix shells")
+
+# Module named 'purge_history' that runs upon session termination
+#class purge_history(Module):
+#	enabled = True
+#	on_session_end = True
+#	category = "My Custom Modules"
+#	def run(session, args):
+#		"""
+#		Deletes ~/.bash_history from target
+#		"""
+#		if session.OS == 'Unix':
+#			session.exec(f'rm ~/.bash_history')
+#			logger.info("~/.bash_history removed!")
+#		else:
+#			logger.error("This module runs only on Unix shells")

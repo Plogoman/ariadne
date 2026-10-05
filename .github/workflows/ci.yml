@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.11', '3.x']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile package
+        run: python -m compileall -q ariadne
+      - name: Import package
+        run: python -c "import ariadne"
+      - name: CLI smoke checks
+        run: |
+          python -c "import ariadne; ariadne.main()" --help
+          python -c "import ariadne; ariadne.main()" --version
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  uv-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: '0.9.5'
+          python-version: '3.11'
+      - name: Check lockfile
+        run: uv lock --check
+      - name: Sync project
+        run: uv sync --locked
+      - name: Run through uv
+        run: |
+          uv run --locked ariadne --help
+          uv run --locked ariadne --version
+          uv run --locked python -m unittest discover -s tests -v

@@ -1,0 +1,394 @@
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0d369fba-480e-4e27-a117-8845dbd4b58e" alt="Logo" width="200"/>
+</div>
+
+<img src="https://img.shields.io/badge/Version-0.21.13-6D4AFF"/><br>
+![Fork](https://img.shields.io/badge/Fork%20of-Penelope-557C94)
+
+> **This is Ariadne, a fork of [Penelope](https://github.com/brightio/penelope) by [brightio](https://github.com/brightio).**
+> All credit for the original design, features, and the "Thanks to the early
+> birds" list below goes to the upstream project. This fork restructures the
+> single-file tool into a proper Python package, removes decorative
+> emoji/glyphs, gives sessions randomly generated codenames instead of
+> sequential numbers, and packages it for `uv tool install`. See
+> [GUIDE.md](GUIDE.md) for what to test and [IMPROVEMENTS.md](IMPROVEMENTS.md)
+> for suggested next steps. Licensed GPL-3.0-or-later, same as upstream.
+
+Ariadne is a modern shell handler for penetration testers and CTF players. It provides a more capable alternative to basic netcat listeners, adding automatic PTY upgrades, session management, logging, file transfers and helper modules.
+
+## Table of Contents
+- [Installation](#installation)
+- [Features](#features)
+  - [Session Features](#session-features)
+  - [Global Features](#global-features)
+  - [Modules](#modules)
+- [Usage](#usage)
+  - [Typical Usage](#typical-usage)
+  - [HTTP File Server (`-s`)](#http-file-server--s)
+  - [Reverse Shell Payloads](#reverse-shell-payloads)
+  - [Example Workflow](#example-workflow)
+  - [Main Menu Commands](#main-menu-commands)
+  - [Command Line Options](#command-line-options)
+- [Security considerations](#security-considerations)
+- [TODO](#todo)
+- [FAQ](#faq)
+- [Thanks to the early birds](#thanks-to-the-early-birds)
+
+## Installation
+
+Ariadne runs on Unix-like host systems, including Linux, macOS, FreeBSD and requires **Python 3.7+**. It's implemented entirely with Python's standard library — no external runtime dependencies.
+
+### uv (recommended, system-wide install)
+```bash
+uv tool install .      # from a clone of this repo
+ariadne --version
+```
+Editable install for development (picks up source edits live):
+```bash
+uv tool install --editable .
+```
+Uninstall:
+```bash
+uv tool uninstall ariadne-shell-handler
+```
+
+### Development with uv
+
+This repository is a uv project. `uv.lock` records the resolved project
+environment, and `uv sync` creates `.venv` and installs Ariadne as an editable
+package. After cloning, run:
+
+```bash
+uv sync --locked
+uv run --locked ariadne --help
+uv run --locked python -m unittest discover -s tests -v
+```
+
+When changing dependencies or project metadata, update the lockfile with
+`uv lock` and include the resulting `uv.lock` change. This project has no
+runtime dependencies; uv currently locks the local project itself.
+
+### Upstream (original, unmodified Penelope)
+If you want the original single-file tool this fork is based on rather than
+this restructured version, see
+[github.com/brightio/penelope](https://github.com/brightio/penelope) for its
+own install instructions (Kali package, standalone script, pipx, PyPI).
+
+## Features
+### Session Features
+|Feature|Unix-like target|Windows target|
+|-----------|:-------:|:-----:|
+|Auto-upgrade shell|PTY|readline(*)|
+|Real-time terminal resize|Yes|No|
+|Logging shell activity|Yes|Yes|
+|Download remote files/folders|Yes|Yes|
+|Upload local/HTTP files/folders|Yes|Yes|
+|In-memory local/HTTP script execution with real-time output downloading|Yes|No|
+|Local port forwarding|Yes|No|
+|Spawn shells on multiple tabs and/or hosts|Yes|No|
+|Auto-maintain N active shells per host (re-spawn on death)|Yes|No|
+
+(*) Can be manually upgraded to PTY with the `upgrade` command
+> Note: Windows support is experimental and under active development.
+
+### Global Features
+- Streamlined interaction with targets through modules
+- Multiple sessions
+- Multiple listeners
+- Serve files and folders over HTTP (`-s`)
+- Can be imported by Python exploits to handle shells in the same terminal (see [extras/exploit_examples](extras/exploit_examples))
+- Can be used with Metasploit exploits by disabling the default handler with `set DisablePayloadHandler True`
+- Expose live sessions to an MCP client like Claude Code with the `--mcp` switch (token-authenticated HTTP, optional TLS), driving the same shells alongside you
+
+### Modules
+
+Modules are shortcuts for tools you would otherwise run, download, or upload by hand. Type `modules` to list them and `run <module>` to use one. Upload modules fetch tools from their upstream sources when run; operator-side modules such as `certipy` and `enum4linux_ng` use programs installed locally and run them on the Ariadne host. Ariadne itself has no runtime dependencies.
+
+|Category|Module|What it does|
+|---|---|---|
+|Privilege Escalation|`upload_privesc_scripts`|Upload linpeas, lse, deepce, pspy on Unix, or winpeas, powerup, privesccheck, fullpowers, enablealltokenprivs on Windows|
+||`peass_ng`|Run the latest PEASS-ng in the background|
+||`lse`|Run the latest linux-smart-enumeration in the background|
+||`linuxexploitsuggester`|Run the latest linux-exploit-suggester in the background|
+||`traitor`|Upload Traitor|
+||`upload_local_exploits`|Upload DirtyFrag and DirtyPipe|
+||`upload_potato`|Upload GodPotato, SigmaPotato, PrintSpoofer|
+|Credential Dumping|`upload_credump_scripts`|Upload Mimikatz, LaZagne, Snaffler, SharpWeb|
+|Active Directory|`upload_ad_scripts`|Upload PowerView, SharpHound, GhostPack, adPEAS|
+||`certipy`|Run Certipy's AD CS `find` enumeration locally on the operator host|
+|Host Enumeration|`seatbelt`|Run selected Seatbelt checks from the uploaded GhostPack bundle and download a JSON report|
+|Network Enumeration|`enum4linux_ng`|Run enum4linux-ng locally against an SMB target, defaulting to the selected session IP|
+|Pivoting|`ligolo`|Upload the Ligolo-ng agent|
+||`chisel`|Upload Chisel|
+||`ngrok`|Set up a TCP tunnel through ngrok|
+|Forensics|`uac`|Collect forensic artifacts with Unix-like Artifacts Collector in the background|
+||`linux_procmemdump`|Dump process memory in the background (needs root)|
+|Persistence|`panix`|Upload PANIX|
+|Misc|`meterpreter`|Spawn a Meterpreter session|
+||`cleanup`|Remove the files and directories you uploaded to the target|
+
+![modules](https://github.com/user-attachments/assets/ff139757-ea4b-487d-8e81-e84baf911093)
+
+#### Operator-side enumeration modules
+
+These modules run tools on the Ariadne host, not on the selected target. The
+operator host must be able to reach the requested AD/SMB services. Install
+Certipy in an isolated Python environment and make its `certipy` or
+`certipy-ad` command available on `PATH`; Ariadne runs its AD CS `find`
+enumeration mode. Install enum4linux-ng and its required Samba command-line
+tools locally. With no arguments, `enum4linux_ng` runs `-A` against the
+selected session's IP; pass a host and options to override it.
+
+```text
+run certipy -u analyst@example.test -dc-ip 10.10.10.5
+run enum4linux_ng 10.10.10.5 -A -C
+```
+
+Seatbelt runs on the selected Windows session. Upload its existing GhostPack
+bundle once, then choose the checks to run:
+
+```text
+run upload_ad_scripts ghostpack
+run seatbelt --group system
+```
+
+#### Meterpreter module demonstration
+
+![meterpreter](https://github.com/user-attachments/assets/b9cda69c-e25c-41e1-abe2-ce18ba13c4ed)
+
+## Usage
+### Typical Usage
+```bash
+ariadne                           # Listening for reverse shells on 0.0.0.0:4444
+ariadne -p 5555                   # Listening for reverse shells on 0.0.0.0:5555
+ariadne -p 4444,5555              # Listening for reverse shells on 0.0.0.0:4444 and 0.0.0.0:5555
+ariadne -i eth0 -p 5555           # Listening for reverse shells on eth0:5555
+ariadne -a                        # Listening for reverse shells on 0.0.0.0:4444 and show sample reverse shell payloads
+
+ariadne -c target -p 3333         # Connect to a bind shell on target:3333
+
+ariadne ssh user@target           # Get a reverse shell from target on local port 4444
+ariadne -p 5555 ssh user@target   # Get a reverse shell from target on local port 5555
+ariadne -i eth0 -p 5555 -- ssh -l user -p 2222 target  # Get a reverse shell from target on eth0, local port 5555 (use -- if ssh needs switches)
+
+ariadne -s <File/Folder>          # Share a file or folder via HTTP
+```
+![Ariadne](https://github.com/user-attachments/assets/b8e5cd84-60a5-4d79-b041-68bee901ab19)
+
+### HTTP File Server (`-s`)
+Ariadne can be used also as a quick HTTP file server.
+
+```bash
+ariadne -s file.txt                  # Serve a single file on 0.0.0.0:8000
+ariadne -s /path/to/dir              # Serve a whole folder
+ariadne -s a.sh b.elf notes.txt      # Serve several items at once
+ariadne -s . -p 80                   # Serve the current dir on port 80
+ariadne -s secret.txt -prefix xk9   # Hide behind a URL prefix: /xk9/secret.txt
+ariadne -s -u                        # Upload mode: accept PUT/POST into the CWD
+ariadne -s -u -ud /tmp/loot          # Upload mode, store received files in /tmp/loot
+```
+
+On start, Ariadne prints a ready-to-use link per interface (and an upload hint
+when `-u` is set), so you can copy-paste straight into the target shell.
+
+### Reverse Shell Payloads
+Ariadne prints ready-to-paste reverse shell commands pointing back at its own Listeners, so you don't have to look them up elsewhere and fill in the IP and port by hand. There are two ways to get them:
+
+```bash
+ariadne -a                           # Print every payload for each Listener as it starts
+```
+
+From the Main Menu, `payloads` prints them at any time, and unlike `-a` it narrows the list first. It asks which Listener the payloads should point at, and whether the target runs Linux or Windows, so you only get the ones that can actually run there. Answer `*` for every Listener and `both` for every payload:
+
+|Target|Payloads|
+|---|---|
+|Linux|Bash TCP, Netcat with a named pipe, Python3, Perl, PHP, Ruby, Msfvenom ELF|
+|Windows|PowerShell, Msfvenom EXE|
+|Both|Metasploit `generic/shell_reverse_tcp` settings|
+
+The payloads that run on the target are base64 encoded, so the quoting survives whatever mangles it on the way in, and the PowerShell one runs with `-nop -w hidden`. The Msfvenom lines are printed as they are, since those run on your machine to build the file rather than on the target.
+
+### Example Workflow
+
+As shown in the video below, within only a few seconds we can:
+1. Get a fully functional auto-resizable PTY shell while logging every interaction with the target
+2. Execute the latest version of LinPEAS on the target without touching the disk and save the output to a local file in real time
+3. Open one more PTY shell in another tab
+4. Upload the latest versions of LinPEAS and linux-smart-enumeration
+5. Upload a local folder with custom scripts
+6. Upload an exploit-db exploit directly from URL
+7. Download and open a remote file locally
+8. Download the remote /etc directory
+9. Automatically replace a shell when an existing session dies, helping maintain access during unstable sessions
+
+https://github.com/brightio/penelope/assets/65655412/7295da32-28e2-4c92-971f-09423eeff178  <!-- demo recorded on upstream Penelope; behavior unchanged by this fork -->
+
+### Main Menu Commands
+Notes:
+- By default you need to press `F12` to detach the PTY shell and go to the Main Menu. If the upgrade was not possible and you ended up with a basic shell, you can detach it with `Ctrl+C`. This also prevents the accidental killing of the shell.
+- The Main Menu supports TAB completion and also short commands. For example instead of `interact 1` you can just type `i 1`.
+- `help <command>` shows the full usage and examples for any of these.
+
+|Group|Command|What it does|
+|---|---|---|
+|Session Operations|`run`|Run a module (`help run` lists them)|
+||`upload`|Upload local files, folders, or HTTP(S)/FTP URLs to the target|
+||`download`|Download files and folders from the target|
+||`open`|Download a remote file or folder and open it with your local default application|
+||`script`|Run a local or remote script in memory and download its output in real time|
+||`exec`|Execute a command on the target and print its output|
+||`spawn`|Spawn another shell from the selected target|
+||`maintain`|Keep N active shells per target, respawning them when they die|
+||`upgrade`|Upgrade the session's shell to PTY (automatic by default, disable with `-U`)|
+||`portfwd`|Forward a local port through the session to a host the target can reach|
+|Session Management|`sessions`|List active sessions or interact with one|
+||`use`|Select a session|
+||`interact`|Interact with a session|
+||`kill`|Kill a session|
+||`dir` \| `.`|Open the session's local folder, or Ariadne's base folder if no session is selected|
+|Shell Management|`listeners`|Add, stop, or view Listeners|
+||`payloads`|Show reverse shell commands for the active Listeners|
+||`connect`|Connect to a bind shell|
+||`Interfaces`|Show the local network interfaces|
+|Miscellaneous|`help`|Main Menu help, or help for one command|
+||`modules`|Show the available modules|
+||`history`|Show Main Menu history|
+||`cd`|Show or change the session's remote working directory (the one used for transfers)|
+||`lcd`|Show or change Ariadne's local working directory|
+||`SET`|Show or set option values|
+||`reload`|Reload the rc file|
+||`reset`|Reset the local terminal|
+||`DEBUG`|Open the debug console|
+||`exit` \| `quit` \| `q` \| `Ctrl+D`|Exit Ariadne|
+
+![Main Menu](https://github.com/user-attachments/assets/a0ba2925-ea7a-4c09-9ed0-8063a7d21b65)
+
+### Command Line Options
+```
+positional arguments:
+  args                          Arguments for -s/--serve and SSH reverse shell modes
+
+options:
+  -p, --ports                   Ports (comma separated) to listen/connect/serve, depending on -i/-c/-s options
+                                (Default: 4444/5555/8000)
+
+Reverse or Bind shell?:
+  -i, --interface               Local interface/IP to listen. (Default: 0.0.0.0)
+  -c, --connect                 Bind shell Host
+  -j, --jump                    Reverse shell jump endpoints
+
+Hints:
+  -a, --payloads                Show sample reverse shell payloads for active Listeners
+  -l, --interfaces              List available network interfaces
+  -h, --help                    show this help message and exit
+
+Session Logging:
+  -L, --no-log                  Disable session log files
+  -T, --no-timestamps           Disable timestamps in logs
+  -CT, --no-colored-timestamps  Disable colored timestamps in logs
+
+Misc:
+  -M, --menu                    Start in the Main Menu
+  -m, --maintain                Keep N sessions per target
+  -S, --single-session          Accommodate only the first created session
+  -ms, --max-sessions           Max active sessions per host (default 5, 0 = reject all new)
+  -C, --no-attach               Do not auto-attach on new sessions
+  -U, --no-upgrade              Disable shell auto-upgrade
+  -H, --keep-history            Keep target shell history (do not set HISTFILE=/dev/null)
+  -O, --oscp-safe               Enable OSCP-safe mode
+  --no-disk                     Keep all state in RAM (tmpfs); nothing persists to disk
+
+MCP:
+  --mcp                         Enable the MCP server over local HTTP
+  --mcp-host                    Host/IP to bind (default: 127.0.0.1)
+  --mcp-port                    Port to bind (default: saved port, else a random free port persisted to ~/.ariadne/mcp.json)
+  --mcp-token                   Bearer token (default: saved token, else auto-generated and persisted)
+  --mcp-cert                    TLS certificate PEM; enables HTTPS with --mcp-key
+  --mcp-key                     TLS private key PEM; required with --mcp-cert
+
+File server:
+  -s, --serve                   Run HTTP file server mode
+  -prefix, --url-prefix         URL path prefix
+  -u, --upload                  Enable file upload (PUT/POST) to the server
+  -ud, --upload-dir             Directory to store uploads (default: CWD)
+
+Debug:
+  -N, --no-bins                 Simulate missing binaries on target (comma-separated)
+  -v, --version                 Print version and exit
+  -d, --debug                   Enable debug output
+  -dd, --dev-mode               Enable developer mode
+  -cu, --check-urls             Check hardcoded URLs health and exit
+```
+
+## Security considerations
+
+Ariadne is designed to provide direct and flexible interaction with remote shells. Keep the following in mind when using it:
+
+- **Terminal escape sequences:** Ariadne forwards terminal output from remote systems directly to your terminal emulator. Malicious remote processes may use terminal escape sequences to manipulate the screen, create misleading links, or interact with features such as the clipboard. This exposure is inherent to any tool that relays a remote shell to the local terminal (like SSH, telnet, netcat) and is not specific to Ariadne. Use a terminal with appropriate security settings when connecting to untrusted systems.
+
+- **Session logs:** Session logs may contain credentials, tokens, commands and other sensitive information received from the target. Store them securely and use `--no-log` when logging is not required.
+
+- **Unencrypted connections:** Standard reverse and bind shell connections are not encrypted. Avoid using them over untrusted networks unless the traffic is protected by a secure tunnel or VPN.
+
+- **MCP server (`--mcp`):** When enabled, the MCP server grants full control over every active session (command execution, file transfer) to any client holding the bearer token, which is stored in `~/.ariadne/mcp.json` (`0600`). It binds to `127.0.0.1` by default. HTTP does not encrypt the token or session data; keep it loopback-only or use `--mcp-cert` and `--mcp-key` when binding beyond localhost. Alternatively, use an SSH tunnel. Keep the token secret.
+
+> **Disclaimer:** Ariadne is intended for authorized security testing, research and educational purposes only. Do not use it against systems without explicit permission.
+
+## TODO
+
+### Features
+* encryption
+* remote port forwarding
+* socks & http proxy
+* team server
+* HTTPs and DNS agents
+
+### Known Issues
+* Session logging: commands that use alternate buffers, such as nano, may leave escape sequences in the log if they terminate abnormally. The data is still preserved, but viewing the logfile with tools like `cat` may look corrupted. Filtering these escape sequences is planned to make log output smoother.
+
+## FAQ
+
+### ► Is Ariadne allowed in the OSCP exam?
+
+Ariadne’s core shell-handling features do not perform automatic exploitation, which makes them suitable for OSCP-style usage. However, exam rules can change, so always verify the current official OffSec rules before using any tool during an exam.
+
+Some modules require extra caution:
+
+* The meterpreter module should only be used in a way that complies with the current exam rules.
+* The traitor module uploads Traitor, which performs automatic privilege escalation.
+
+If you want to avoid accidental rule violations, use the `-O / --oscp-safe` switch.
+
+### ► How can I return from the remote shell to the Main Menu?
+It depends on the type of shell upgrade in use:
+* PTY: press `F12`
+* Readline: send EOF (`Ctrl-D`)
+* Raw: send SIGINT (`Ctrl-C`)
+
+In any case, the correct key is always displayed when you attach to a session. For example:
+
+![F12](https://github.com/user-attachments/assets/87da0eec-0d78-4f1b-8e82-f3ebe9cacf5e)
+
+### ► How can I customize Ariadne (change default options, create custom modules, etc.)?
+See [ariadnerc](extras/ariadnerc)
+
+### ► Why aren’t my current working directory or user preserved when I use menu commands like download/upload?
+This usually means you opened a new interactive shell, possibly under a different user. The Ariadne agent only tracks the directory of the initial shell and keeps the permissions of the user from that first shell. The best workaround is to `cd /tmp` before opening a new shell, or, if you switched users, spawn a new reverse shell as the new user.
+
+### ► How can I contribute?
+Your contributions are invaluable! If you’d like to help, please report bugs, unexpected behaviors, or share new ideas. You can also submit pull requests but avoid making commits from IDEs that enforce PEP8 and unintentionally restructure the entire codebase.
+
+### ► Where does the name come from?
+The upstream project, Penelope, is named after Odysseus's wife, known for her loyalty and patience while waiting for him to return — fitting for a tool built to be a faithful, stable shell handler. This fork is named Ariadne after the figure who gave Theseus the thread that let him navigate the Labyrinth and find his way back out — fitting for a refactor whose whole point was turning one tangled 8,000-line file into something navigable.
+
+## Thanks to the early birds
+*(All of the credit below belongs to the upstream Penelope project and its author, brightio — carried over here unchanged.)*
+* [Cristian Grigoriu - @crgr](https://github.com/crgr) for inspiring me to automate the PTY upgrade process. This is how this project was born.
+* [Paul Taylor - @bao7uo](https://github.com/bao7uo) for the idea to support bind shells.
+* [Longlone - @WAY29](https://github.com/WAY29) for indicating the need for compatibility with previous versions of Python (3.6).
+* [Carlos Polop - @carlospolop](https://github.com/carlospolop) for the idea to spawn shells on listeners on other systems.
+* [@darrenmartyn](https://github.com/darrenmartyn) for indicating an alternative method to upgrade the shell to PTY using the script command.
+* [@bamuwe](https://github.com/bamuwe) for the idea to get reverse shells via SSH.
+* [@strikoder](https://github.com/strikoder) for numerous enhancement ideas.
+* [@root-tanishq](https://github.com/root-tanishq), [@robertstrom](https://github.com/robertstrom), [@terryf82](https://github.com/terryf82), [@RamadhanAmizudin](https://github.com/RamadhanAmizudin), [@furkan-enes-polatoglu](https://github.com/furkan-enes-polatoglu), [@DerekFost](https://github.com/DerekFost), [@Mag1cByt3s](https://github.com/Mag1cByt3s), [@nightingalephillip](https://github.com/nightingalephillip), [@grisuno](https://github.com/grisuno), [@thinkslynk](https://github.com/thinkslynk), [@stavoxnetworks](https://github.com/stavoxnetworks), [@thomas-br](https://github.com/thomas-br), [@joshoram80](https://github.com/joshoram80), [@TheAalCh3m1st](https://github.com/TheAalCh3m1st), [@r3pek](https://github.com/r3pek), [@bamuwe](https://github.com/bamuwe), [@six-two](https://github.com/six-two), [@x9xhack](https://github.com/x9xhack), [@dummys](https://github.com/dummys), [@pocpayload](https://github.com/pocpayload), [@anti79](https://github.com/anti79), [@strikoder](https://github.com/strikoder), [@bestutsengineer](https://github.com/bestutsengineer) for bug reporting.
+* Special thanks to [@Y3llowDuck](https://github.com/Y3llowDuck) for spreading the word!

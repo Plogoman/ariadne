@@ -1,0 +1,62 @@
+[build-system]
+  requires = ["setuptools>=61"]
+  build-backend = "setuptools.build_meta"
+
+[project]
+  name = "ariadne-shell-handler"
+  version = "0.21.13"
+  requires-python = ">=3.7"
+  description = "Ariadne -- a maintained fork of Penelope, a post-exploitation shell handler for authorized security testing"
+  readme = "README.md"
+  authors = [
+    {name = "brightio", email = "brightio.code@gmail.com"},
+    {name = "plogoman"},
+  ]
+  license = {text = "GPL-3.0-or-later"}
+  keywords = [
+    "reverse-shell",
+    "tty",
+    "pty",
+    "rce",
+    "ctf",
+    "ctf-tools",
+    "oscp",
+    "shell-handler",
+    "hackthebox",
+    "oscp-tools",
+    "tryhackme",
+  ]
+  classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+  ]
+
+[project.urls]
+  Upstream = "https://github.com/brightio/penelope"
+
+[project.scripts]
+  ariadne = "ariadne:main"
+
+[tool.setuptools]
+  packages = ["ariadne"]
+
+[tool.uv]
+  package = true
+
+[tool.ruff]
+  fix = false
+
+[tool.ruff.lint]
+  fixable = []
+  unfixable = ["ALL"]
+  select = ["E", "W", "F"]
+  ignore = ["W191", "E101", "E111"]
+
+[tool.ruff.lint.isort]
+  force-single-line = true
+
+[tool.ruff.format]
+  exclude = ["*.py"]

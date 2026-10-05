@@ -1,0 +1,8 @@
+version = 1
+revision = 3
+requires-python = ">=3.7"
+
+[[package]]
+name = "ariadne-shell-handler"
+version = "0.21.13"
+source = { editable = "." }
