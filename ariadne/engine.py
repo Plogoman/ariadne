@@ -6,7 +6,7 @@ from .compat import *
 from .messenger import Messenger
 from .options import options
 from .log import logger, cmdlogger
-from .display import paint, Open, Table, Size, PBar, signal_bars, TAGS, HelpFormatter, LineBuffer
+from .display import paint, Open, Table, Size, PBar, signal_bars, TAGS, HelpFormatter, LineBuffer, Interfaces
 from .cli_input import stdout, ask, ask_listener, ask_target_os, my_input, BetterCMD, readline
 from .network import ControlQueue, handle_bind_errors, Connect, Forwarding, TCPListener, Channel
 from .modules import modules, Module, upload_extracted_archive, upload_single_from_archive
