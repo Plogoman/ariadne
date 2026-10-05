@@ -57,7 +57,7 @@ class OperatorModuleTests(unittest.TestCase):
 	def test_seatbelt_uses_uploaded_ghostpack_and_downloads_json(self, rand):
 		session = SimpleNamespace(
 			OS='Windows', subtype='cmd',
-			uploaded_paths={'"C:\\Temp\\ghostpack"': 0},
+			uploaded_paths={'C:\\Temp\\ghostpack': 0},
 			tmp='C:\\Windows\\Temp',
 			exec=unittest.mock.Mock(return_value='completed'),
 			download=unittest.mock.Mock(return_value=['/tmp/session/downloads/report.json']),
@@ -231,7 +231,7 @@ class MeterpreterLinuxTests(unittest.TestCase):
 		return SimpleNamespace(
 			OS='Windows', arch='x64-based_PC', subtype='cmd', tmp='C:\\Temp',
 			listener=None, _host='192.0.2.10',
-			exec=unittest.mock.Mock(),
+			exec=unittest.mock.Mock(return_value=''),
 			upload=unittest.mock.Mock(return_value=['C:\\Temp\\p.exe']),
 		)
 

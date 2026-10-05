@@ -56,6 +56,34 @@ survived the exit sequence"). Mitigated in beb0e12 by raising the budgets
 prints a full stack dump if a thread genuinely survives, so real bugs still
 fail loudly. If it flakes again despite the budgets, root-cause it.
 
+## FIXED 3 — Windows meterpreter: payload uploaded but never launched ("handler up, no session")
+
+**Cause — double-quoted remote path.** `Session.upload()` (Windows branch)
+returned paths pre-wrapped in literal `"` (done for `do_upgrade`, which
+embedded them raw into `get-content {path}`), and the meterpreter module
+wrapped again: `Start-Process -WindowStyle Hidden ""C:\...\payload.exe""`.
+PowerShell *parses* that fine but at runtime binds the leading empty string
+as `-FilePath` — verified on pwsh: "Cannot validate argument on parameter
+'FilePath'. The argument is null or empty". The error text landed inside
+exec's marker capture and the module discarded the response — total
+silence: upload ✓, handler ✓, zero connections. The ConPtyShell upgrade
+only ever worked because its exec goes through `force_cmd` (cmd.exe
+semantics, where `""` is inert).
+**Fixed:** `upload()` returns bare paths on both OSes; every consumer
+quotes for its own transport (meterpreter psh/cmd/Unix branches,
+`do_upgrade` single-quotes the path, uac already `shlex.quote`d,
+cleanup/seatbelt already strip quotes). The meterpreter launch now captures
+the exec response and warns when it contains the PS/cmd launch-error
+signatures instead of dying silently.
+**Verification:** manual `Start-Process -WindowStyle Hidden "C:\...\dUvDdebhKG.exe"`
+(single-wrapped — byte-identical to the fixed typed command) opened
+Meterpreter session 2 from the real target at 17:23:02; full suite green.
+Red herrings along the way: Defender (disabled on that VM:
+`AMRunningMode: Not running`) and the deb13 probe stage-send noise (see
+ENVIRONMENT QUIRKS).
+
+
+
 ## OPEN 2 — full menu-command audit (in progress)
 
 Operator hit `NameError: name 'Interfaces'` on the `Interfaces` command
@@ -74,7 +102,7 @@ through `FileServer` (engine.py:3481 upload path, also the meterpreter
 PS1-serving path at engine.py:2984 and the `links` property), and
 `FileServer.__init__` calls `Interfaces().translate(...)` (fileserver.py:17)
 without importing it. Every download succeeded; every upload failed —
-downloads don't use FileServer. **Fixed:** `Interfaces` added to the
+downloads don't use FileServer. **Fixed in b14291e:** `Interfaces` added to the
 display import in fileserver.py. Verified by pre/post repro of the exact
 constructor NameError, full test suite green, installed==source diff clean.
 AST-based sweep over all modules for display-symbol usage (star-import
@@ -97,6 +125,15 @@ Remaining: live-verify each menu command (operator-driven, real terminal).
 Status will be recorded here. Suspect nothing; this is routine coverage.
 
 ## ENVIRONMENT QUIRKS (not ariadne bugs)
+
+- **Never full-connect a live meterpreter handler port.** Any plain TCP
+  connect (e.g. `bash /dev/tcp`, `nc`, `curl`) is indistinguishable from a
+  stager: msfconsole sends it the 255 KB stage and logs
+  `Meterpreter session N is not valid and will be closed` noise. Cost a
+  misdiagnosis round on Oct 5 (deb13=172.17.0.3 probe looked like a payload
+  callback). Check reachability with a bind() on the host side (what the
+  meterpreter module itself does) or read the msfconsole log only for
+  connections from the target's IP.
 
 - deb13: `/dev/shm` is **noexec**; `/tmp` is exec-ok. ariadne's exec_tmp probe
   now handles this correctly (tests executability, skips /dev/shm).
