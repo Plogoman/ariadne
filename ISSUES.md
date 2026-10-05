@@ -66,6 +66,33 @@ names — all remaining warnings are `from .compat import *` star-import noise
 (mcp_server's `core` is injected by `__init__.py` and verified present at
 runtime).
 
+**Follow-up (same day, Windows host):** the pyflakes sweep was blind — a
+star import makes pyflakes skip undefined-name checks entirely. Operator hit
+`Failed to upload <tool>: name 'Interfaces' is not defined` for every
+`upload_privesc_scripts` tool on a Windows session: all Windows uploads go
+through `FileServer` (engine.py:3481 upload path, also the meterpreter
+PS1-serving path at engine.py:2984 and the `links` property), and
+`FileServer.__init__` calls `Interfaces().translate(...)` (fileserver.py:17)
+without importing it. Every download succeeded; every upload failed —
+downloads don't use FileServer. **Fixed:** `Interfaces` added to the
+display import in fileserver.py. Verified by pre/post repro of the exact
+constructor NameError, full test suite green, installed==source diff clean.
+AST-based sweep over all modules for display-symbol usage (star-import
+aware) now reports no other missing imports (core.py defines its own
+`BRACKETED_PASTE_RE`/`_BP_MARKER_PREFIXES` copies — duplicate of
+display.py:537, intentional). Full-package pyflakes sweep with the
+`compat` star imports resolved to explicit names confirms nothing else:
+every remaining "undefined name" is a documented injection (`core`/`menu`/
+`logger`/`options`/`readline`/`restore_tty`/`load_rc`/`AGENT`/`MESSENGER`/
+`STREAM`/`GET_GLOB_SIZE`/`original_input`/`custom_excepthook` wired in
+`__init__.py:147-197`), a deferred import (`network.Connect` → `Session`),
+or a guarded fallback (`options.py __setattr__` checks `'logger' in
+globals()`). Known latent dead branch: `Stream.__init__` (engine.py:3976)
+references bare `respond` when `session is None`, but every handler-side
+instantiation passes a session (engine.py:1296) — agent-side `respond`
+lives in the embedded `agent()` source, so this is Penelope-inherited
+dead code, not reachable.
+
 Remaining: live-verify each menu command (operator-driven, real terminal).
 Status will be recorded here. Suspect nothing; this is routine coverage.
 

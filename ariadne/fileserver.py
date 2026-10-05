@@ -5,7 +5,7 @@
 from .compat import *
 from .options import options
 from .log import logger, cmdlogger
-from .display import paint, Table, TAGS
+from .display import paint, Table, TAGS, Interfaces
 from .network import handle_bind_errors
 
 # core: injected by ariadne/__init__.py after the singleton exists.
