@@ -3845,6 +3845,9 @@ class Session:
 		def server_thread():
 			with ThreadedTCPServer(None, ThreadedTCPRequestHandler, bind_and_activate=False) as server:
 				if not server.server_bind(lhost, lport):
+					# The thread's return value goes nowhere; without this
+					# the operator gets silence on a duplicate/bound port.
+					logger.error(f"Cannot set up Port Forwarding: {lhost}:{lport} is already in use")
 					return False
 				server.server_activate()
 				Forwarding(session, info, control, threading.current_thread(), server)
