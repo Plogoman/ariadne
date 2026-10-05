@@ -38,7 +38,8 @@ jobs:
     - name: Check if minor or major version changed
       id: release_version
       run: |
-        PREV_VERSION=$(git show HEAD^:ariadne/compat.py | grep -oP '__version__\s*=\s*["'\'']?\K[0-9.]+')
+        # First commit of a fresh repo has no HEAD^: fall back to 0.0.0
+        PREV_VERSION=$(git show HEAD^:ariadne/compat.py 2>/dev/null | grep -oP '__version__\s*=\s*["'\'']?\K[0-9.]+' || echo "0.0.0")
         CURR_VERSION=${{ steps.get_version.outputs.version }}
         PREV_MAJOR=$(echo $PREV_VERSION | cut -d. -f1)
         CURR_MAJOR=$(echo $CURR_VERSION | cut -d. -f1)
@@ -91,11 +92,12 @@ jobs:
         pip install build
         python -m build
 
-    # Requires a PYPI_API_TOKEN secret scoped to *this* fork's own PyPI
-    # project (ariadne-shell-handler) -- not upstream's. Remove this step,
-    # or leave the secret unset, if you don't want to publish to PyPI.
+    # Requires a PYPI_API_TOKEN secret scoped to *this* repo's own PyPI
+    # project (ariadne-shell-handler) -- not upstream's. Step is skipped
+    # when the secret is unset; remove the step entirely if you never
+    # want to publish to PyPI.
     - name: Publish to PyPI
-      if: steps.release_version.outputs.changed == 'true'
+      if: ${{ steps.release_version.outputs.changed == 'true' && secrets.PYPI_API_TOKEN != '' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
