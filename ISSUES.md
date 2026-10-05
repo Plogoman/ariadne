@@ -47,12 +47,14 @@ chisel, pspy) still trust the setup-time `session.arch`, which can be garbled
 by PTY echo interleaving on agent sessions. If a module picks a wrong-arch
 binary, suspect that.
 
-## OPEN 1 — integration test flaky: `test_exit_sequence_terminates_script_exec_thread`
+## FIXED 2 — integration test flaky: `test_exit_sequence_terminates_script_exec_thread`
 
-`agent not deployed` after the 60 s deadline — the standalone-python deploy via
-the cached python sometimes misses in the test env. Retry logic or a longer
-deadline needed. Suite otherwise green (62/62 today, includes the deploy
-pipeline tests).
+Bit the first public CI runs: on a loaded runner the 60 s deploy / 10 s
+teardown budgets were too tight ("agent not deployed", "Thread-2 (exec)
+survived the exit sequence"). Mitigated in beb0e12 by raising the budgets
+(120 s deploy, 30 s teardown) — no code regression was involved; the test
+prints a full stack dump if a thread genuinely survives, so real bugs still
+fail loudly. If it flakes again despite the budgets, root-cause it.
 
 ## ENVIRONMENT QUIRKS (not ariadne bugs)
 
